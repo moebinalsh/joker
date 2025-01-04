@@ -203,10 +203,11 @@
     <p>Made with ❤️ by <a href="https://github.com/malsheikh-sec" target="_blank">MoeBin</a></p>
   </footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script>
     let screenshots = [];
 
-    // Handle Screenshot Upload
     document.getElementById('uploadScreenshot').addEventListener('click', function () {
       document.getElementById('screenshot').click();
     });
@@ -214,14 +215,10 @@
     document.getElementById('screenshot').addEventListener('change', function (e) {
       const files = e.target.files;
       const preview = document.getElementById('preview');
-      preview.innerHTML = '';  // Clear any existing previews
-
-      // Preview the images
+      preview.innerHTML = '';
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        screenshots.push(file);  // Store uploaded files in the screenshots array
-
-        // Create an image preview
+        screenshots.push(file);
         const reader = new FileReader();
         reader.onload = function (event) {
           const img = document.createElement('img');
@@ -233,7 +230,6 @@
       }
     });
 
-    // Copy Notes to Clipboard
     document.getElementById('copyNotes').addEventListener('click', function () {
       const notes = document.getElementById('notes').value;
       navigator.clipboard.writeText(notes).then(() => {
@@ -241,31 +237,21 @@
       });
     });
 
-    // Download Report (including screenshot paths)
     document.getElementById('downloadReport').addEventListener('click', async function () {
       const notes = document.getElementById('notes').value;
-      const title = "Incident Report";
-      const screenshotsList = screenshots.map((img, idx) => `Screenshot ${idx + 1}: ${img.name}`).join('\n');
-
-      const report = `${title}\n\nNotes:\n${notes}\n\nScreenshots:\n${screenshotsList}`;
-
       const zip = new JSZip();
-      zip.file("incident_report.txt", report);
 
-      for (const file of screenshots) {
-        const fileData = await file.arrayBuffer();
-        zip.file(file.name, fileData);
-      }
+      zip.file('notes.txt', notes);
 
-      zip.generateAsync({ type: "blob" }).then(function (content) {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(content);
-        a.download = "Joker_Notes_Report.zip";
-        a.click();
+      screenshots.forEach((screenshot, index) => {
+        zip.file(`screenshot-${index + 1}.png`, screenshot);
+      });
+
+      zip.generateAsync({ type: 'blob' }).then(function (content) {
+        saveAs(content, 'joker_notes.zip');
       });
     });
 
-    // Particle effect script
     const canvas = document.querySelector('.particles');
     const ctx = canvas.getContext('2d');
     const particles = [];
@@ -280,7 +266,7 @@
         this.size = Math.random() * 5 + 1;
         this.speedX = Math.random() * 2 - 1;
         this.speedY = Math.random() * 2 - 1;
-        this.color = '#00d4a0'; // Green color
+        this.color = '#00d4a0';
       }
 
       update() {
@@ -303,12 +289,10 @@
     function animateParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Create new particles
       if (particles.length < 100) {
         particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
       }
 
-      // Update and draw particles
       particles.forEach((particle, index) => {
         particle.update();
         particle.draw();
