@@ -7,8 +7,9 @@
   <meta name="author" content="MoeBin">
   <link rel="icon" href="img/logocon.png" type="image/png">
   <title>Joker Notes</title>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
   <style>
-    /* Global reset */
     * {
       margin: 0;
       padding: 0;
@@ -202,6 +203,7 @@
   <script>
     let screenshots = [];
 
+    // Handle Screenshot Upload
     document.getElementById('uploadScreenshot').addEventListener('click', function () {
       document.getElementById('screenshot').click();
     });
@@ -209,10 +211,10 @@
     document.getElementById('screenshot').addEventListener('change', function (e) {
       const files = e.target.files;
       const preview = document.getElementById('preview');
-      preview.innerHTML = '';
+      preview.innerHTML = ''; // Clear existing previews
+      screenshots = []; // Reset screenshots array
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      for (let file of files) {
         screenshots.push(file);
 
         const reader = new FileReader();
@@ -226,6 +228,7 @@
       }
     });
 
+    // Copy Notes to Clipboard
     document.getElementById('copyNotes').addEventListener('click', function () {
       const notes = document.getElementById('notes').value;
       navigator.clipboard.writeText(notes).then(() => {
@@ -233,103 +236,27 @@
       });
     });
 
+    // Download Report as ZIP
     document.getElementById('downloadReport').addEventListener('click', async function () {
       const notes = document.getElementById('notes').value;
-      const title = "Incident Report";
-      const screenshotsList = screenshots.map((img, idx) => `Screenshot ${idx + 1}: ${img.name}`).join('\n');
-      const report = `${title}\n\nNotes:\n${notes}\n\nScreenshots:\n${screenshotsList}`;
+      const reportContent = `Incident Report\n\nNotes:\n${notes}\n\nScreenshots:\n${screenshots.map((file, idx) => `Screenshot ${idx + 1}: ${file.name}`).join('\n')}`;
 
-      if (window.showDirectoryPicker) {
-        try {
-          const folderHandle = await window.showDirectoryPicker();
-          const folderName = notes.substring(0, 20) || "Joker_Notes";
-          const folder = await folderHandle.getDirectoryHandle(folderName, { create: true });
+      const zip = new JSZip();
+      zip.file("incident_report.txt", reportContent);
 
-          const reportFile = await folder.getFileHandle("incident_report.txt", { create: true });
-          const writable = await reportFile.createWritable();
-          await writable.write(report);
-          await writable.close();
-
-          for (let img of screenshots) {
-            const imgFile = await folder.getFileHandle(img.name, { create: true });
-            const writableImg = await imgFile.createWritable();
-            const imgBlob = img.slice(0, img.size);
-            await writableImg.write(imgBlob);
-            await writableImg.close();
-          }
-
-          alert("Report and Screenshots saved successfully!");
-        } catch (error) {
-          console.error("Error saving report:", error);
-          alert("Failed to save the report. Please check your browser permissions or try another browser.");
-        }
-      } else {
-        const blob = new Blob([report], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'incident_report.txt';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        alert('Report downloaded to your default folder.');
-      }
-    });
-
-    const canvas = document.querySelector('.particles');
-    const ctx = canvas.getContext('2d');
-    const particles = [];
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    class Particle {
-      constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.size = Math.random() * 5 + 1;
-        this.speedX = Math.random() * 2 - 1;
-        this.speedY = Math.random() * 2 - 1;
-        this.color = '#00d4a0';
+      for (let file of screenshots) {
+        const imgData = await file.arrayBuffer();
+        zip.file(`screenshots/${file.name}`, imgData);
       }
 
-      update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        if (this.size > 0.2) this.size -= 0.1;
-      }
-
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-    }
-
-    function animateParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (particles.length < 100) {
-        particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
-      }
-
-      particles.forEach((particle, index) => {
-        particle.update();
-        particle.draw();
-        if (particle.size <= 0.2) {
-          particles.splice(index, 1);
-        }
+      zip.generateAsync({ type: "blob" }).then(blob => {
+        saveAs(blob, "Joker_Notes_Report.zip");
+        alert("Report downloaded successfully!");
+      }).catch(err => {
+        console.error("Error generating ZIP:", err);
+        alert("Failed to download the report. Please try again.");
       });
-
-      requestAnimationFrame(animateParticles);
-    }
-
-    animateParticles();
+    });
   </script>
 </body>
 
