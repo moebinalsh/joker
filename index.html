@@ -29,7 +29,6 @@
       position: relative;
     }
 
-    /* Create the particles effect */
     canvas.particles {
       position: absolute;
       top: 0;
@@ -56,7 +55,6 @@
       margin-bottom: 30px;
     }
 
-    /* Logo styling */
     .logo {
       max-width: 180px;
       margin-bottom: 10px;
@@ -87,7 +85,6 @@
       }
     }
 
-    /* Notes section */
     .notes-container {
       margin-top: 20px;
     }
@@ -101,7 +98,7 @@
       border: none;
       background: #333;
       color: #ddd;
-      resize: both; /* Make the textarea resizable both vertically and horizontally */
+      resize: both;
       overflow: auto;
       transition: background 0.3s ease;
     }
@@ -153,7 +150,6 @@
       transform: scale(1.1);
     }
 
-    /* Add a footer with some cool text */
     footer {
       text-align: center;
       margin-top: 50px;
@@ -206,7 +202,6 @@
   <script>
     let screenshots = [];
 
-    // Handle Screenshot Upload
     document.getElementById('uploadScreenshot').addEventListener('click', function () {
       document.getElementById('screenshot').click();
     });
@@ -214,14 +209,12 @@
     document.getElementById('screenshot').addEventListener('change', function (e) {
       const files = e.target.files;
       const preview = document.getElementById('preview');
-      preview.innerHTML = '';  // Clear any existing previews
+      preview.innerHTML = '';
 
-      // Preview the images
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        screenshots.push(file);  // Store uploaded files in the screenshots array
+        screenshots.push(file);
 
-        // Create an image preview
         const reader = new FileReader();
         reader.onload = function (event) {
           const img = document.createElement('img');
@@ -233,7 +226,6 @@
       }
     });
 
-    // Copy Notes to Clipboard
     document.getElementById('copyNotes').addEventListener('click', function () {
       const notes = document.getElementById('notes').value;
       navigator.clipboard.writeText(notes).then(() => {
@@ -241,39 +233,50 @@
       });
     });
 
-    // Download Report (including screenshot paths)
     document.getElementById('downloadReport').addEventListener('click', async function () {
       const notes = document.getElementById('notes').value;
       const title = "Incident Report";
       const screenshotsList = screenshots.map((img, idx) => `Screenshot ${idx + 1}: ${img.name}`).join('\n');
-
-      // Ask user to choose a folder where the report will be saved
-      const folderHandle = await window.showDirectoryPicker();
-
-      // Create folder named after the notes (or user input)
-      const folderName = notes.substring(0, 20) || "Joker_Notes";  // Use the first 20 characters of notes as folder name
-      const folder = await folderHandle.getDirectoryHandle(folderName, { create: true });
-
-      // Create and write the report file
-      const reportFile = await folder.getFileHandle("incident_report.txt", { create: true });
       const report = `${title}\n\nNotes:\n${notes}\n\nScreenshots:\n${screenshotsList}`;
-      const writable = await reportFile.createWritable();
-      await writable.write(report);
-      await writable.close();
 
-      // Save screenshots to the same folder
-      for (let img of screenshots) {
-        const imgFile = await folder.getFileHandle(img.name, { create: true });
-        const writableImg = await imgFile.createWritable();
-        const imgBlob = img.slice(0, img.size);
-        await writableImg.write(imgBlob);
-        await writableImg.close();
+      if (window.showDirectoryPicker) {
+        try {
+          const folderHandle = await window.showDirectoryPicker();
+          const folderName = notes.substring(0, 20) || "Joker_Notes";
+          const folder = await folderHandle.getDirectoryHandle(folderName, { create: true });
+
+          const reportFile = await folder.getFileHandle("incident_report.txt", { create: true });
+          const writable = await reportFile.createWritable();
+          await writable.write(report);
+          await writable.close();
+
+          for (let img of screenshots) {
+            const imgFile = await folder.getFileHandle(img.name, { create: true });
+            const writableImg = await imgFile.createWritable();
+            const imgBlob = img.slice(0, img.size);
+            await writableImg.write(imgBlob);
+            await writableImg.close();
+          }
+
+          alert("Report and Screenshots saved successfully!");
+        } catch (error) {
+          console.error("Error saving report:", error);
+          alert("Failed to save the report. Please check your browser permissions or try another browser.");
+        }
+      } else {
+        const blob = new Blob([report], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'incident_report.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert('Report downloaded to your default folder.');
       }
-
-      alert("Report and Screenshots saved successfully!");
     });
 
-    // Particle effect script
     const canvas = document.querySelector('.particles');
     const ctx = canvas.getContext('2d');
     const particles = [];
@@ -288,7 +291,7 @@
         this.size = Math.random() * 5 + 1;
         this.speedX = Math.random() * 2 - 1;
         this.speedY = Math.random() * 2 - 1;
-        this.color = '#00d4a0'; // Green color
+        this.color = '#00d4a0';
       }
 
       update() {
@@ -311,12 +314,10 @@
     function animateParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Create new particles
       if (particles.length < 100) {
         particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
       }
 
-      // Update and draw particles
       particles.forEach((particle, index) => {
         particle.update();
         particle.draw();
