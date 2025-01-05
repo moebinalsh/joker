@@ -8,7 +8,7 @@
   <link rel="icon" href="img/logocon.png" type="image/png">
   <title>Joker Notes</title>
   
-  <!-- Font Awesome (for icons) -->
+  <!-- Font Awesome for icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
   <style>
@@ -202,22 +202,25 @@
       object-fit: contain;
     }
 
-    /* Social Icons */
+    /* Social Icons Section */
     .social-icons {
-      margin-top: 30px;
       display: flex;
       justify-content: center;
-      gap: 20px;
+      gap: 30px;
+      margin-top: 30px;
+      padding-bottom: 30px;
     }
 
     .social-icons a {
-      font-size: 2rem;
       color: #00d4a0;
-      transition: transform 0.3s ease;
+      font-size: 2rem;
+      text-decoration: none;
+      transition: color 0.3s ease, transform 0.3s ease;
     }
 
     .social-icons a:hover {
-      transform: scale(1.1);
+      color: #009d6b;
+      transform: scale(1.2);
     }
 
   </style>
@@ -261,7 +264,6 @@
       <a href="https://wazuh.cloud.aws.salla.group/" target="_blank" title="Wazuh">
         <i class="fas fa-shield-alt"></i>
       </a>
-      <!-- ChatGPT Icon Link -->
       <a href="https://chat.openai.com/" target="_blank" title="ChatGPT">
         <i class="fas fa-comment-dots"></i>
       </a>
@@ -310,12 +312,20 @@
 
     // Helper function to convert file to base64
     function fileToBase64(file) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
         reader.readAsDataURL(file);
       });
+    }
+
+    // Function to extract links, phone numbers, IPs, and emails
+    function extractInfo(text) {
+      const links = text.match(/https?:\/\/[^\s]+/g) || [];
+      const phones = text.match(/(?:\+?\d{1,4}[ -]?)?(?:\(?\d{1,4}\)?[ -]?)?\d{3,4}[ -]?\d{3,4}[ -]?\d{3,4}/g) || [];
+      const ips = text.match(/(?:\d{1,3}\.){3}\d{1,3}/g) || [];
+      const emails = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+      return { links, phones, ips, emails };
     }
 
     // Download report as a ZIP file
@@ -344,7 +354,7 @@
           <style>
             body { font-family: Arial, sans-serif; }
             h1 { color: #00d4a0; display: flex; align-items: center; font-size: 2.5rem; }
-            h1 img { margin-right: 10px; max-height: 30px; } /* Adjust logo size here */
+            h1 img { margin-right: 10px; max-height: 30px; }
             h2 { color: #009d6b; }
             p { font-size: 1.1rem; line-height: 1.5; }
             .screenshot-img { max-width: 300px; max-height: 200px; margin-bottom: 15px; border-radius: 8px; object-fit: contain; }
@@ -432,17 +442,16 @@
     matrixCanvas.height = window.innerHeight;
 
     function drawMatrix() {
-      matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)'; // Set background color to black with transparency
+      matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
       matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
 
-      matrixCtx.fillStyle = '#00d4a0'; // Green color for the Matrix text
+      matrixCtx.fillStyle = '#00d4a0';
       matrixCtx.font = '20px monospace';
 
       for (let i = 0; i < matrixColumns; i++) {
         const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
         matrixCtx.fillText(char, i * 20, drops[i] * 20);
 
-        // Reset drop when it reaches the bottom of the canvas
         if (drops[i] * 20 > matrixCanvas.height && Math.random() > 0.975) {
           drops[i] = 0;
         }
@@ -451,7 +460,7 @@
       }
     }
 
-    setInterval(drawMatrix, 50); // Draw matrix effect every 50ms
+    setInterval(drawMatrix, 50);
   </script>
 </body>
 
