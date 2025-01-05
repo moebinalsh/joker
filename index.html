@@ -56,7 +56,6 @@
       margin-bottom: 30px;
     }
 
-    /* Logo styling */
     .logo {
       max-width: 180px;
       margin-bottom: 10px;
@@ -87,7 +86,6 @@
       }
     }
 
-    /* Notes section */
     .notes-container {
       margin-top: 20px;
     }
@@ -101,7 +99,7 @@
       border: none;
       background: #333;
       color: #ddd;
-      resize: both; /* Make the textarea resizable both vertically and horizontally */
+      resize: both;
       overflow: auto;
       transition: background 0.3s ease;
     }
@@ -115,6 +113,8 @@
       display: flex;
       justify-content: space-between;
       margin-top: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
 
     button {
@@ -125,13 +125,21 @@
       border-radius: 8px;
       cursor: pointer;
       font-size: 1.2rem;
-      width: 30%;
+      width: calc(50% - 10px);
       transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
     button:hover {
       background-color: #009d6b;
       transform: scale(1.05);
+    }
+
+    /* Center the Download button */
+    .center-button {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin-top: 20px;
     }
 
     .preview {
@@ -153,7 +161,6 @@
       transform: scale(1.1);
     }
 
-    /* Add a footer with some cool text */
     footer {
       text-align: center;
       margin-top: 50px;
@@ -172,6 +179,14 @@
 
     footer a:hover {
       text-decoration: underline;
+    }
+
+    .screenshot-img {
+      max-width: 300px;
+      max-height: 200px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      object-fit: contain;
     }
   </style>
 </head>
@@ -192,7 +207,11 @@
         <button id="uploadScreenshot">Upload Screenshot(s)</button>
         <input type="file" id="screenshot" accept="image/*" multiple hidden />
         <button id="copyNotes">Copy Notes</button>
-        <button id="downloadReport">Download Report</button>
+      </div>
+
+      <!-- Center the Download button -->
+      <div class="center-button">
+        <button id="downloadReport">Download Report as ZIP</button>
       </div>
 
       <div id="preview" class="preview"></div>
@@ -208,6 +227,7 @@
   <script>
     let screenshots = [];
 
+    // Handle screenshot upload
     document.getElementById('uploadScreenshot').addEventListener('click', function () {
       document.getElementById('screenshot').click();
     });
@@ -215,7 +235,7 @@
     document.getElementById('screenshot').addEventListener('change', function (e) {
       const files = e.target.files;
       const preview = document.getElementById('preview');
-      preview.innerHTML = '';
+      preview.innerHTML = '';  // Clear the preview container
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         screenshots.push(file);
@@ -230,6 +250,7 @@
       }
     });
 
+    // Copy notes to clipboard
     document.getElementById('copyNotes').addEventListener('click', function () {
       const notes = document.getElementById('notes').value;
       navigator.clipboard.writeText(notes).then(() => {
@@ -237,24 +258,141 @@
       });
     });
 
+    // Helper function to convert file to base64
+    function fileToBase64(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Function to extract links, phone numbers, IPs, and emails
+    function extractInfo(text) {
+      const links = text.match(/https?:\/\/[^\s]+/g) || [];
+
+      // Refined phone number pattern: Detect only valid phone numbers
+      const phones = text.match(/(?:\+?\d{1,4}[ -]?)?(?:\(?\d{1,4}\)?[ -]?)?\d{3,4}[ -]?\d{3,4}[ -]?\d{3,4}/g) || [];
+      
+      // More robust IP address matching
+      const ips = text.match(/(?:\d{1,3}\.){3}\d{1,3}/g) || [];
+      const emails = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+      
+      return { links, phones, ips, emails };
+    }
+
+    // Download report as a ZIP file
     document.getElementById('downloadReport').addEventListener('click', async function () {
       const notes = document.getElementById('notes').value;
       const zip = new JSZip();
 
-      zip.file('notes.txt', notes);
+      // Extract information (links, phone numbers, IPs, emails)
+      const { links, phones, ips, emails } = extractInfo(notes);
 
+      // Convert screenshots to base64
+      const screenshotsBase64 = await Promise.all(screenshots.map(file => fileToBase64(file)));
+
+      // Create HTML content with screenshots embedded
+      let screenshotsHTML = '';
+      if (screenshotsBase64.length > 0) {
+        screenshotsHTML = screenshotsBase64.map((base64, index) => {
+          return `<img src="data:image/png;base64,${base64}" class="screenshot-img" alt="Screenshot ${index + 1}" />`;
+        }).join('');
+      }
+
+      const notesTemplate = `
+      <html>
+        <head>
+          <title>Joker Notes Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            h1 { color: #00d4a0; display: flex; align-items: center; font-size: 2.5rem; }
+            h1 img { margin-right: 10px; max-height: 30px; } /* Adjust logo size here */
+            h2 { color: #009d6b; }
+            p { font-size: 1.1rem; line-height: 1.5; }
+            .screenshot-img { max-width: 300px; max-height: 200px; margin-bottom: 15px; border-radius: 8px; object-fit: contain; }
+          </style>
+        </head>
+        <body>
+          <h1>
+            <img src="https://github.com/moebinalsh/joker/raw/main/img/logocon.png" alt="Joker Notes Logo" />
+            Joker Notes
+          </h1>
+          <h2>Notes:</h2>
+          <p>${notes.replace(/\n/g, '<br>')}</p>
+
+          <h2>Screenshots:</h2>
+          ${screenshotsHTML}
+
+          ${links.length > 0 ? `
+            <h2>Links:</h2>
+            <ul>
+              ${links.map(link => `<li><a href="${link}" target="_blank">${link}</a></li>`).join('')}
+            </ul>
+          ` : ''}
+
+          ${phones.length > 0 ? `
+            <h2>Phone Numbers:</h2>
+            <ul>
+              ${phones.map(phone => `<li>${phone}</li>`).join('')}
+            </ul>
+          ` : ''}
+
+          ${ips.length > 0 ? `
+            <h2>IP Addresses:</h2>
+            <ul>
+              ${ips.map(ip => `<li>${ip}</li>`).join('')}
+            </ul>
+          ` : ''}
+
+          ${emails.length > 0 ? `
+            <h2>Emails:</h2>
+            <ul>
+              ${emails.map(email => `<li>${email}</li>`).join('')}
+            </ul>
+          ` : ''}
+        </body>
+      </html>
+      `;
+
+      // Add notes as HTML
+      zip.file('notes.html', notesTemplate);
+
+      // Add screenshots to the zip file
       screenshots.forEach((screenshot, index) => {
-        zip.file(`screenshot-${index + 1}.png`, screenshot);
+        zip.file(`screenshots/screenshot-${index + 1}.png`, screenshot);
       });
 
+      // Add plain text version of notes
+      let notesText = notes;
+      if (links.length > 0) {
+        notesText += `\n\nLinks:\n${links.join('\n')}`;
+      }
+      if (phones.length > 0) {
+        notesText += `\n\nPhone Numbers:\n${phones.join('\n')}`;
+      }
+      if (ips.length > 0) {
+        notesText += `\n\nIP Addresses:\n${ips.join('\n')}`;
+      }
+      if (emails.length > 0) {
+        notesText += `\n\nEmails:\n${emails.join('\n')}`;
+      }
+      zip.file('notes.txt', notesText);
+
       zip.generateAsync({ type: 'blob' }).then(function (content) {
-        saveAs(content, 'joker_notes.zip');
+        saveAs(content, 'joker_notes_report.zip');
       });
     });
 
+    // Particle effect for the background
     const canvas = document.querySelector('.particles');
     const ctx = canvas.getContext('2d');
     const particles = [];
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -278,31 +416,29 @@
       draw() {
         ctx.fillStyle = this.color;
         ctx.strokeStyle = this.color;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.closePath();
         ctx.fill();
-        ctx.stroke();
       }
     }
 
     function animateParticles() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (particles.length < 100) {
-        particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
-      }
-
-      particles.forEach((particle, index) => {
+      particles.forEach(particle => {
         particle.update();
         particle.draw();
-        if (particle.size <= 0.2) {
-          particles.splice(index, 1);
-        }
       });
-
       requestAnimationFrame(animateParticles);
     }
+
+    function createParticles(event) {
+      const particle = new Particle(event.x, event.y);
+      particles.push(particle);
+    }
+
+    canvas.addEventListener('mousemove', createParticles);
 
     animateParticles();
   </script>
