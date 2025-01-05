@@ -39,6 +39,15 @@
       z-index: -1;
     }
 
+    .matrix {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+    }
+
     .container {
       width: 100%;
       max-width: 1000px;
@@ -192,6 +201,7 @@
 </head>
 
 <body>
+  <canvas class="matrix"></canvas>
   <canvas class="particles"></canvas>
 
   <div class="container">
@@ -384,63 +394,37 @@
       });
     });
 
-    // Particle effect for the background
-    const canvas = document.querySelector('.particles');
-    const ctx = canvas.getContext('2d');
-    const particles = [];
+    // Matrix background effect
+    const matrixCanvas = document.querySelector('.matrix');
+    const matrixCtx = matrixCanvas.getContext('2d');
+    const matrixColumns = Math.floor(window.innerWidth / 20);
+    const matrixChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*()'.split('');
+    let drops = new Array(matrixColumns).fill(0);
 
-    window.addEventListener('resize', () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    });
+    matrixCanvas.width = window.innerWidth;
+    matrixCanvas.height = window.innerHeight;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    function drawMatrix() {
+      matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)'; // Set background color to black with transparency
+      matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
 
-    class Particle {
-      constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.size = Math.random() * 5 + 1;
-        this.speedX = Math.random() * 2 - 1;
-        this.speedY = Math.random() * 2 - 1;
-        this.color = '#00d4a0';
-      }
+      matrixCtx.fillStyle = '#00d4a0'; // Green color for the Matrix text
+      matrixCtx.font = '20px monospace';
 
-      update() {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        if (this.size > 0.2) this.size -= 0.1;
-      }
+      for (let i = 0; i < matrixColumns; i++) {
+        const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+        matrixCtx.fillText(char, i * 20, drops[i] * 20);
 
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.strokeStyle = this.color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.fill();
+        // Reset drop when it reaches the bottom of the canvas
+        if (drops[i] * 20 > matrixCanvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+
+        drops[i]++;
       }
     }
 
-    function animateParticles() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(particle => {
-        particle.update();
-        particle.draw();
-      });
-      requestAnimationFrame(animateParticles);
-    }
-
-    function createParticles(event) {
-      const particle = new Particle(event.x, event.y);
-      particles.push(particle);
-    }
-
-    canvas.addEventListener('mousemove', createParticles);
-
-    animateParticles();
+    setInterval(drawMatrix, 50); // Draw matrix effect every 50ms
   </script>
 </body>
 
