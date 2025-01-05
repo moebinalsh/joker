@@ -7,7 +7,7 @@
   <meta name="author" content="MoeBin">
   <link rel="icon" href="img/logocon.png" type="image/png">
   <title>Joker Notes</title>
-  
+
   <!-- Font Awesome for icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
@@ -43,6 +43,7 @@
       z-index: -1;
     }
 
+    /* Matrix background effect */
     .matrix {
       position: absolute;
       top: 0;
@@ -50,6 +51,7 @@
       width: 100%;
       height: 100%;
       z-index: -2;
+      background: #000;
     }
 
     .container {
@@ -138,7 +140,7 @@
       border-radius: 8px;
       cursor: pointer;
       font-size: 1.2rem;
-      width: calc(50% - 10px);
+      width: 48%;
       transition: background-color 0.3s ease, transform 0.2s ease;
     }
 
@@ -223,6 +225,73 @@
       transform: scale(1.2);
     }
 
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+
+      .logo {
+        max-width: 150px;
+      }
+
+      textarea {
+        height: 150px;
+        font-size: 1rem;
+      }
+
+      .actions button {
+        width: 48%;
+      }
+
+      .center-button button {
+        font-size: 1rem;
+      }
+
+      .social-icons a {
+        font-size: 1.5rem;
+      }
+
+      .preview {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 2rem;
+      }
+
+      .logo {
+        max-width: 120px;
+      }
+
+      .container {
+        padding: 15px;
+      }
+
+      textarea {
+        height: 120px;
+      }
+
+      .actions button {
+        width: 100%;
+        font-size: 1rem;
+      }
+
+      .center-button button {
+        width: 100%;
+      }
+
+      .preview {
+        gap: 10px;
+      }
+
+      .uploaded-image {
+        max-width: 100px;
+        max-height: 100px;
+      }
+    }
   </style>
 </head>
 
